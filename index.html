@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Aggregator - Organization Report</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Organization Data Aggregator</h1>
+            <p>Upload an Excel file with multiple property sheets to generate an aggregated report</p>
+        </header>
+
+        <div class="upload-section">
+            <div class="upload-box">
+                <input type="file" id="fileInput" accept=".xlsx, .xls" />
+                <label for="fileInput" class="upload-label">
+                    <svg width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="17 8 12 3 7 8"></polyline>
+                        <line x1="12" y1="3" x2="12" y2="15"></line>
+                    </svg>
+                    <span>Choose Excel File or Drag & Drop</span>
+                </label>
+            </div>
+            <div id="fileInfo" class="file-info"></div>
+        </div>
+
+        <div id="sheetsSection" class="sheets-section" style="display: none;">
+            <h3>Detected Sheets:</h3>
+            <div id="sheetsList" class="sheets-list"></div>
+            <button id="processBtn" class="process-btn">Process Data</button>
+        </div>
+
+        <div id="loadingSection" class="loading" style="display: none;">
+            <div class="spinner"></div>
+            <p>Processing data...</p>
+        </div>
+
+        <div id="resultsSection" class="results-section" style="display: none;">
+            <div class="results-header">
+                <h2>Aggregated Report</h2>
+                <div class="button-group">
+                    <button id="exportBtn" class="export-btn">Export to Excel</button>
+                    <button id="resetBtn" class="reset-btn">Upload New File</button>
+                </div>
+            </div>
+
+            <div class="stats">
+                <div class="stat-card">
+                    <h4>Total Keywords</h4>
+                    <p id="totalKeywords">0</p>
+                </div>
+                <div class="stat-card">
+                    <h4>Total Conversions</h4>
+                    <p id="totalConversions">0</p>
+                </div>
+                <div class="stat-card">
+                    <h4>Total Cost</h4>
+                    <p id="totalCost">$0.00</p>
+                </div>
+                <div class="stat-card">
+                    <h4>Sheets Processed</h4>
+                    <p id="sheetsProcessed">0</p>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <table id="resultsTable">
+                    <thead>
+                        <tr>
+                            <th>Keyword</th>
+                            <th>Conversions</th>
+                            <th>Cost</th>
+                        </tr>
+                    </thead>
+                    <tbody id="resultsBody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="errorSection" class="error-section" style="display: none;">
+            <div class="error-message">
+                <h3>Error</h3>
+                <p id="errorText"></p>
+                <button id="dismissError" class="reset-btn">Dismiss</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

@@ -127,7 +127,7 @@ header p {
     font-weight: 500;
 }
 
-.process-btn, .export-btn, .reset-btn {
+.process-btn, .export-btn, .reset-btn, .save-btn {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
     border: none;
@@ -140,13 +140,27 @@ header p {
     box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
 }
 
+.save-btn {
+    background: linear-gradient(135deg, #52c41a 0%, #3fa537 100%);
+    box-shadow: 0 4px 15px rgba(82, 196, 26, 0.4);
+}
+
+.save-btn:hover {
+    box-shadow: 0 6px 20px rgba(82, 196, 26, 0.6);
+}
+
 .process-btn:hover, .export-btn:hover, .reset-btn:hover {
     transform: translateY(-2px);
     box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
 }
 
-.process-btn:active, .export-btn:active, .reset-btn:active {
+.process-btn:active, .export-btn:active, .reset-btn:active, .save-btn:active {
     transform: translateY(0);
+}
+
+.save-btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
 }
 
 .loading {
@@ -402,6 +416,35 @@ td:nth-child(2), td:nth-child(3) {
     font-size: 1.1em;
 }
 
+.notification {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    padding: 16px 24px;
+    border-radius: 8px;
+    color: white;
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transform: translateY(150px);
+    opacity: 0;
+    transition: all 0.3s ease;
+    z-index: 1000;
+    max-width: 400px;
+}
+
+.notification.show {
+    transform: translateY(0);
+    opacity: 1;
+}
+
+.notification.success {
+    background: linear-gradient(135deg, #52c41a 0%, #3fa537 100%);
+}
+
+.notification.error {
+    background: linear-gradient(135deg, #f5222d 0%, #cf1322 100%);
+}
+
 @media (max-width: 768px) {
     header h1 {
         font-size: 1.8em;
@@ -417,11 +460,16 @@ td:nth-child(2), td:nth-child(3) {
         flex-direction: column;
     }
 
-    .process-btn, .export-btn, .reset-btn {
+    .process-btn, .export-btn, .reset-btn, .save-btn {
         width: 100%;
     }
 
     .stats {
         grid-template-columns: 1fr;
+    }
+
+    .notification {
+        left: 20px;
+        right: 20px;
     }
 }

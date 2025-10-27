@@ -1,6 +1,15 @@
 // Global variables
 let workbook = null;
 let aggregatedData = [];
+let currentFileBuffer = null;
+let currentFilename = null;
+let currentSheetNames = [];
+let fileDetails = [];
+
+// Configuration
+const API_BASE_URL = window.location.hostname === 'localhost'
+  ? 'http://localhost:3000/api'
+  : '/api';
 
 // DOM elements
 const fileInput = document.getElementById('fileInput');
@@ -15,12 +24,14 @@ const errorText = document.getElementById('errorText');
 const exportBtn = document.getElementById('exportBtn');
 const resetBtn = document.getElementById('resetBtn');
 const dismissError = document.getElementById('dismissError');
+const saveBtn = document.getElementById('saveBtn');
 
 // Event Listeners
 fileInput.addEventListener('change', handleFileSelect);
 processBtn.addEventListener('click', processData);
 exportBtn.addEventListener('click', exportToExcel);
 resetBtn.addEventListener('click', resetApp);
+saveBtn.addEventListener('click', saveToDatabase);
 dismissError.addEventListener('click', () => {
     errorSection.style.display = 'none';
 });
@@ -78,6 +89,11 @@ function handleFileSelect(event) {
             const data = new Uint8Array(e.target.result);
             workbook = XLSX.read(data, { type: 'array' });
 
+            // Store file buffer and filename for later saving
+            currentFileBuffer = e.target.result;
+            currentFilename = fileName;
+            currentSheetNames = workbook.SheetNames;
+
             // Display sheet names
             displaySheets(workbook.SheetNames);
         } catch (error) {
@@ -124,6 +140,7 @@ function processData() {
         try {
             const keywordMap = new Map();
             let sheetsProcessed = 0;
+            fileDetails = [];
 
             // Process each sheet
             workbook.SheetNames.forEach(sheetName => {
@@ -141,6 +158,16 @@ function processData() {
 
                     if (keyword) {
                         const normalizedKeyword = keyword.toString().trim();
+
+                        // Store detail for database
+                        fileDetails.push({
+                            keyword: normalizedKeyword,
+                            property: sheetName,
+                            campaign: campaign ? campaign.toString().trim() : 'N/A',
+                            adGroup: adGroup ? adGroup.toString().trim() : 'N/A',
+                            conversions: conversions,
+                            cost: cost
+                        });
 
                         if (keywordMap.has(normalizedKeyword)) {
                             const existing = keywordMap.get(normalizedKeyword);
@@ -317,6 +344,87 @@ function createBreakdownTable(breakdown) {
     `;
 
     return html;
+}
+
+// Save aggregated data to database
+async function saveToDatabase() {
+    if (aggregatedData.length === 0) {
+        showError('No data to save. Please process a file first.');
+        return;
+    }
+
+    try {
+        // Show loading state
+        const saveBtn = document.getElementById('saveBtn');
+        if (saveBtn) {
+            saveBtn.disabled = true;
+            saveBtn.textContent = 'Saving...';
+        }
+
+        // Convert file buffer to base64
+        const reader = new FileReader();
+        reader.onload = async function(e) {
+            const base64Data = e.target.result.split(',')[1];
+
+            const payload = {
+                filename: currentFilename,
+                fileBuffer: base64Data,
+                sheetNames: currentSheetNames,
+                aggregatedData: aggregatedData,
+                fileDetails: fileDetails
+            };
+
+            const response = await fetch(`${API_BASE_URL}/upload`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            });
+
+            const result = await response.json();
+
+            if (saveBtn) {
+                saveBtn.disabled = false;
+                saveBtn.textContent = 'Save to Database';
+            }
+
+            if (response.ok) {
+                showNotification(`Successfully saved! File ID: ${result.fileId}`);
+            } else {
+                showError(`Error saving file: ${result.error}`);
+            }
+        };
+
+        // Create a blob from the file buffer and read as data URL
+        const blob = new Blob([currentFileBuffer]);
+        reader.readAsDataURL(blob);
+
+    } catch (error) {
+        const saveBtn = document.getElementById('saveBtn');
+        if (saveBtn) {
+            saveBtn.disabled = false;
+            saveBtn.textContent = 'Save to Database';
+        }
+        showError('Error saving to database: ' + error.message);
+    }
+}
+
+// Show notification message
+function showNotification(message) {
+    const notificationEl = document.createElement('div');
+    notificationEl.className = 'notification success';
+    notificationEl.textContent = message;
+    document.body.appendChild(notificationEl);
+
+    setTimeout(() => {
+        notificationEl.classList.add('show');
+    }, 100);
+
+    setTimeout(() => {
+        notificationEl.classList.remove('show');
+        setTimeout(() => notificationEl.remove(), 300);
+    }, 4000);
 }
 
 // Export aggregated data to Excel

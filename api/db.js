@@ -1,17 +1,31 @@
-const { sql } = require('@vercel/postgres');
+const { Pool } = require('pg');
 const { databaseUrl } = require('./config');
 
-// Set the database URL from config
-if (databaseUrl) {
-  process.env.POSTGRES_URL = databaseUrl;
-  console.log('Database URL configured from config.js');
-}
+// Create connection pool
+const pool = new Pool({
+  connectionString: databaseUrl,
+  ssl: {
+    rejectUnauthorized: false
+  }
+});
+
+// Test connection
+pool.on('connect', () => {
+  console.log('Connected to PostgreSQL database');
+});
+
+pool.on('error', (err) => {
+  console.error('Unexpected database error:', err);
+});
 
 // Initialize database tables
 async function initializeDatabase() {
+  const client = await pool.connect();
   try {
+    console.log('Initializing database tables...');
+
     // Create uploaded_files table
-    await sql`
+    await client.query(`
       CREATE TABLE IF NOT EXISTS uploaded_files (
         id SERIAL PRIMARY KEY,
         filename VARCHAR(255) NOT NULL,
@@ -24,10 +38,10 @@ async function initializeDatabase() {
         created_at TIMESTAMP DEFAULT NOW(),
         updated_at TIMESTAMP DEFAULT NOW()
       );
-    `;
+    `);
 
-    // Create file_details table (for storing breakdown data)
-    await sql`
+    // Create file_details table
+    await client.query(`
       CREATE TABLE IF NOT EXISTS file_details (
         id SERIAL PRIMARY KEY,
         file_id INTEGER NOT NULL REFERENCES uploaded_files(id) ON DELETE CASCADE,
@@ -37,13 +51,12 @@ async function initializeDatabase() {
         ad_group VARCHAR(255),
         conversions DECIMAL(10, 2),
         cost DECIMAL(10, 2),
-        created_at TIMESTAMP DEFAULT NOW(),
-        FOREIGN KEY (file_id) REFERENCES uploaded_files(id)
+        created_at TIMESTAMP DEFAULT NOW()
       );
-    `;
+    `);
 
-    // Create aggregated_keywords table (for quick access to level 1 data)
-    await sql`
+    // Create aggregated_keywords table
+    await client.query(`
       CREATE TABLE IF NOT EXISTS aggregated_keywords (
         id SERIAL PRIMARY KEY,
         file_id INTEGER NOT NULL REFERENCES uploaded_files(id) ON DELETE CASCADE,
@@ -51,107 +64,84 @@ async function initializeDatabase() {
         total_conversions DECIMAL(10, 2),
         total_cost DECIMAL(10, 2),
         breakdown_count INTEGER,
-        created_at TIMESTAMP DEFAULT NOW(),
-        FOREIGN KEY (file_id) REFERENCES uploaded_files(id)
+        created_at TIMESTAMP DEFAULT NOW()
       );
-    `;
+    `);
 
-    // Create indexes for better query performance
-    await sql`CREATE INDEX IF NOT EXISTS idx_file_details_file_id ON file_details(file_id);`;
-    await sql`CREATE INDEX IF NOT EXISTS idx_file_details_keyword ON file_details(keyword);`;
-    await sql`CREATE INDEX IF NOT EXISTS idx_aggregated_keywords_file_id ON aggregated_keywords(file_id);`;
+    // Create indexes
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_file_details_file_id ON file_details(file_id);`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_file_details_keyword ON file_details(keyword);`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_aggregated_keywords_file_id ON aggregated_keywords(file_id);`);
 
     console.log('Database tables initialized successfully');
   } catch (error) {
     console.error('Error initializing database:', error);
     throw error;
+  } finally {
+    client.release();
   }
 }
 
 // Save uploaded file and its data
 async function saveUploadedFile(filename, fileBuffer, sheetNames, aggregatedData, fileDetails) {
+  const client = await pool.connect();
   try {
+    await client.query('BEGIN');
+
     // Insert into uploaded_files
-    const fileResult = await sql`
-      INSERT INTO uploaded_files (
+    const fileResult = await client.query(
+      `INSERT INTO uploaded_files (
+        filename, file_data, file_size, sheet_names, total_keywords, total_conversions, total_cost
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
+      [
         filename,
-        file_data,
-        file_size,
-        sheet_names,
-        total_keywords,
-        total_conversions,
-        total_cost
-      ) VALUES (
-        ${filename},
-        ${fileBuffer},
-        ${fileBuffer.length},
-        ${sheetNames},
-        ${aggregatedData.length},
-        ${aggregatedData.reduce((sum, item) => sum + item.conversions, 0)},
-        ${aggregatedData.reduce((sum, item) => sum + item.cost, 0)}
-      )
-      RETURNING id;
-    `;
+        fileBuffer,
+        fileBuffer.length,
+        sheetNames,
+        aggregatedData.length,
+        aggregatedData.reduce((sum, item) => sum + item.conversions, 0),
+        aggregatedData.reduce((sum, item) => sum + item.cost, 0)
+      ]
+    );
 
     const fileId = fileResult.rows[0].id;
 
     // Insert aggregated keywords
     for (const keyword of aggregatedData) {
-      await sql`
-        INSERT INTO aggregated_keywords (
-          file_id,
-          keyword,
-          total_conversions,
-          total_cost,
-          breakdown_count
-        ) VALUES (
-          ${fileId},
-          ${keyword.keyword},
-          ${keyword.conversions},
-          ${keyword.cost},
-          ${keyword.breakdown.length}
-        );
-      `;
+      await client.query(
+        `INSERT INTO aggregated_keywords (file_id, keyword, total_conversions, total_cost, breakdown_count)
+         VALUES ($1, $2, $3, $4, $5)`,
+        [fileId, keyword.keyword, keyword.conversions, keyword.cost, keyword.breakdown.length]
+      );
     }
 
-    // Insert file details (breakdown data)
+    // Insert file details
     for (const detail of fileDetails) {
-      await sql`
-        INSERT INTO file_details (
-          file_id,
-          keyword,
-          property,
-          campaign,
-          ad_group,
-          conversions,
-          cost
-        ) VALUES (
-          ${fileId},
-          ${detail.keyword},
-          ${detail.property},
-          ${detail.campaign},
-          ${detail.adGroup},
-          ${detail.conversions},
-          ${detail.cost}
-        );
-      `;
+      await client.query(
+        `INSERT INTO file_details (file_id, keyword, property, campaign, ad_group, conversions, cost)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+        [fileId, detail.keyword, detail.property, detail.campaign, detail.adGroup, detail.conversions, detail.cost]
+      );
     }
 
+    await client.query('COMMIT');
     return fileId;
   } catch (error) {
+    await client.query('ROLLBACK');
     console.error('Error saving file to database:', error);
     throw error;
+  } finally {
+    client.release();
   }
 }
 
 // Get all uploaded files
 async function getAllUploadedFiles() {
   try {
-    const result = await sql`
-      SELECT id, filename, file_size, sheet_names, total_keywords, total_conversions, total_cost, created_at
-      FROM uploaded_files
-      ORDER BY created_at DESC;
-    `;
+    const result = await pool.query(
+      `SELECT id, filename, file_size, sheet_names, total_keywords, total_conversions, total_cost, created_at
+       FROM uploaded_files ORDER BY created_at DESC`
+    );
     return result.rows;
   } catch (error) {
     console.error('Error fetching uploaded files:', error);
@@ -161,12 +151,13 @@ async function getAllUploadedFiles() {
 
 // Get file by ID
 async function getFileById(fileId) {
+  const client = await pool.connect();
   try {
-    const fileResult = await sql`
-      SELECT id, filename, file_size, sheet_names, total_keywords, total_conversions, total_cost, created_at
-      FROM uploaded_files
-      WHERE id = ${fileId};
-    `;
+    const fileResult = await client.query(
+      `SELECT id, filename, file_size, sheet_names, total_keywords, total_conversions, total_cost, created_at
+       FROM uploaded_files WHERE id = $1`,
+      [fileId]
+    );
 
     if (fileResult.rows.length === 0) {
       return null;
@@ -174,21 +165,19 @@ async function getFileById(fileId) {
 
     const file = fileResult.rows[0];
 
-    // Get aggregated keywords for this file
-    const keywordsResult = await sql`
-      SELECT keyword, total_conversions, total_cost, breakdown_count
-      FROM aggregated_keywords
-      WHERE file_id = ${fileId}
-      ORDER BY total_conversions DESC;
-    `;
+    // Get aggregated keywords
+    const keywordsResult = await client.query(
+      `SELECT keyword, total_conversions, total_cost, breakdown_count
+       FROM aggregated_keywords WHERE file_id = $1 ORDER BY total_conversions DESC`,
+      [fileId]
+    );
 
-    // Get breakdown details for this file
-    const detailsResult = await sql`
-      SELECT keyword, property, campaign, ad_group, conversions, cost
-      FROM file_details
-      WHERE file_id = ${fileId}
-      ORDER BY keyword, property;
-    `;
+    // Get breakdown details
+    const detailsResult = await client.query(
+      `SELECT keyword, property, campaign, ad_group, conversions, cost
+       FROM file_details WHERE file_id = $1 ORDER BY keyword, property`,
+      [fileId]
+    );
 
     return {
       ...file,
@@ -198,13 +187,15 @@ async function getFileById(fileId) {
   } catch (error) {
     console.error('Error fetching file by ID:', error);
     throw error;
+  } finally {
+    client.release();
   }
 }
 
 // Delete file and associated data
 async function deleteFile(fileId) {
   try {
-    await sql`DELETE FROM uploaded_files WHERE id = ${fileId};`;
+    await pool.query('DELETE FROM uploaded_files WHERE id = $1', [fileId]);
     return true;
   } catch (error) {
     console.error('Error deleting file:', error);
@@ -215,8 +206,8 @@ async function deleteFile(fileId) {
 // Get file statistics
 async function getFileStatistics(fileId) {
   try {
-    const result = await sql`
-      SELECT
+    const result = await pool.query(
+      `SELECT
         COUNT(*) as total_records,
         COUNT(DISTINCT keyword) as unique_keywords,
         COUNT(DISTINCT property) as total_properties,
@@ -224,9 +215,9 @@ async function getFileStatistics(fileId) {
         SUM(cost) as total_cost,
         AVG(conversions) as avg_conversions,
         AVG(cost) as avg_cost
-      FROM file_details
-      WHERE file_id = ${fileId};
-    `;
+       FROM file_details WHERE file_id = $1`,
+      [fileId]
+    );
     return result.rows[0];
   } catch (error) {
     console.error('Error fetching file statistics:', error);

@@ -12,6 +12,6 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "@vercel/postgres": "^0.4.0"
+    "pg": "^8.11.3"
   }
 }

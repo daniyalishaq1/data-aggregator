@@ -1,9 +1,4 @@
 {
-  "functions": {
-    "api/**/*.js": {
-      "runtime": "nodejs@18.x"
-    }
-  },
   "headers": [
     {
       "source": "/api/(.*)",
@@ -21,12 +16,6 @@
           "value": "Content-Type"
         }
       ]
-    }
-  ],
-  "rewrites": [
-    {
-      "source": "/(.*)",
-      "destination": "/index.html"
     }
   ]
 }

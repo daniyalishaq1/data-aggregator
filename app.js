@@ -25,6 +25,9 @@ const exportBtn = document.getElementById('exportBtn');
 const resetBtn = document.getElementById('resetBtn');
 const dismissError = document.getElementById('dismissError');
 const saveBtn = document.getElementById('saveBtn');
+const savedFilesSection = document.getElementById('savedFilesSection');
+const savedFilesList = document.getElementById('savedFilesList');
+const refreshFilesBtn = document.getElementById('refreshFilesBtn');
 
 // Event Listeners
 fileInput.addEventListener('change', handleFileSelect);
@@ -32,9 +35,13 @@ processBtn.addEventListener('click', processData);
 exportBtn.addEventListener('click', exportToExcel);
 resetBtn.addEventListener('click', resetApp);
 saveBtn.addEventListener('click', saveToDatabase);
+refreshFilesBtn.addEventListener('click', loadSavedFiles);
 dismissError.addEventListener('click', () => {
     errorSection.style.display = 'none';
 });
+
+// Load saved files on page load
+window.addEventListener('DOMContentLoaded', loadSavedFiles);
 
 // Drag and drop functionality
 const uploadBox = document.querySelector('.upload-box');
@@ -480,6 +487,136 @@ function showError(message) {
     errorText.textContent = message;
     errorSection.style.display = 'block';
     loadingSection.style.display = 'none';
+}
+
+// Load saved files from database
+async function loadSavedFiles() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/files`);
+        const files = await response.json();
+
+        if (files.length === 0) {
+            savedFilesSection.style.display = 'none';
+            return;
+        }
+
+        // Display saved files section
+        savedFilesSection.style.display = 'block';
+        savedFilesList.innerHTML = '';
+
+        files.forEach(file => {
+            const fileCard = document.createElement('div');
+            fileCard.className = 'saved-file-card';
+
+            const formattedDate = new Date(file.created_at).toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+
+            fileCard.innerHTML = `
+                <div class="file-card-header">
+                    <div class="file-info-left">
+                        <h4>${file.filename}</h4>
+                        <p class="file-meta">
+                            <span>📅 ${formattedDate}</span>
+                            <span>📊 ${file.total_keywords} keywords</span>
+                            <span>📁 ${file.sheet_names?.length || 0} sheets</span>
+                        </p>
+                    </div>
+                    <div class="file-info-right">
+                        <div class="file-stat">
+                            <span class="label">Conversions</span>
+                            <span class="value">${file.total_conversions?.toLocaleString() || 0}</span>
+                        </div>
+                        <div class="file-stat">
+                            <span class="label">Cost</span>
+                            <span class="value">$${(file.total_cost || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="file-card-actions">
+                    <button class="view-btn" onclick="viewSavedFile(${file.id})">View Report</button>
+                    <button class="delete-btn" onclick="deleteSavedFile(${file.id})">Delete</button>
+                </div>
+            `;
+
+            savedFilesList.appendChild(fileCard);
+        });
+    } catch (error) {
+        console.error('Error loading saved files:', error);
+        // Don't show error to user, just hide the section
+        savedFilesSection.style.display = 'none';
+    }
+}
+
+// View saved file details
+async function viewSavedFile(fileId) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/files?id=${fileId}`);
+        const file = await response.json();
+
+        if (!file || !file.aggregatedKeywords) {
+            showError('Error loading file details');
+            return;
+        }
+
+        // Convert aggregatedKeywords to aggregatedData format
+        aggregatedData = file.aggregatedKeywords.map(keyword => ({
+            keyword: keyword.keyword,
+            conversions: keyword.total_conversions,
+            cost: keyword.total_cost,
+            breakdown: file.details
+                .filter(detail => detail.keyword === keyword.keyword)
+                .map(detail => ({
+                    property: detail.property,
+                    campaign: detail.campaign,
+                    adGroup: detail.ad_group,
+                    conversions: detail.conversions,
+                    cost: detail.cost
+                }))
+        }));
+
+        // Display the results
+        displayResults(aggregatedData, file.sheet_names?.length || 0);
+
+        // Scroll to results
+        resultsSection.scrollIntoView({ behavior: 'smooth' });
+
+        showNotification(`Loaded: ${file.filename}`);
+    } catch (error) {
+        console.error('Error loading file:', error);
+        showError('Error loading file details: ' + error.message);
+    }
+}
+
+// Delete saved file
+async function deleteSavedFile(fileId) {
+    const filename = event.target.closest('.saved-file-card').querySelector('h4').textContent;
+
+    if (!confirm(`Are you sure you want to delete "${filename}"?`)) {
+        return;
+    }
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/files?id=${fileId}`, {
+            method: 'DELETE'
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+            showNotification('File deleted successfully');
+            loadSavedFiles(); // Refresh the list
+        } else {
+            showError('Error deleting file: ' + result.error);
+        }
+    } catch (error) {
+        console.error('Error deleting file:', error);
+        showError('Error deleting file: ' + error.message);
+    }
 }
 
 // Format file size

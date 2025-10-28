@@ -391,6 +391,9 @@ async function saveToDatabase() {
                 fileDetails: fileDetails
             };
 
+            console.log('Saving to:', `${API_BASE_URL}/upload`);
+            console.log('Payload size:', JSON.stringify(payload).length, 'bytes');
+
             const response = await fetch(`${API_BASE_URL}/upload`, {
                 method: 'POST',
                 headers: {
@@ -399,7 +402,18 @@ async function saveToDatabase() {
                 body: JSON.stringify(payload)
             });
 
-            const result = await response.json();
+            console.log('Save response status:', response.status);
+
+            let result;
+            const responseText = await response.text();
+            try {
+                result = JSON.parse(responseText);
+            } catch (e) {
+                console.error('Invalid JSON response:', responseText);
+                result = { error: responseText };
+            }
+
+            console.log('Save result:', result);
 
             if (saveBtn) {
                 saveBtn.disabled = false;
@@ -409,10 +423,12 @@ async function saveToDatabase() {
             if (response.ok) {
                 showNotification(`Successfully saved! File ID: ${result.fileId}`);
                 // Refresh sidebar to show new file
-                loadSidebarFiles();
-                loadSavedFiles();
+                console.log('Refreshing sidebar and file list...');
+                await loadSidebarFiles();
+                await loadSavedFiles();
             } else {
-                showError(`Error saving file: ${result.error}`);
+                console.error('Save failed:', result);
+                showError(`Error saving file: ${result.error || 'Unknown error'}`);
             }
         };
 
@@ -654,14 +670,27 @@ function closeSidebar() {
 // Load files into sidebar
 async function loadSidebarFiles() {
     try {
+        console.log('Loading sidebar files from:', `${API_BASE_URL}/files`);
         const response = await fetch(`${API_BASE_URL}/files`);
+
+        console.log('Response status:', response.status);
+        console.log('Response ok:', response.ok);
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('API Error Response:', errorText);
+            throw new Error(`API returned ${response.status}: ${errorText}`);
+        }
+
         const files = await response.json();
+        console.log('Loaded files:', files);
 
         // Update count badge
         sidebarCount.textContent = files.length;
 
         if (files.length === 0) {
             sidebarContent.innerHTML = '<p class="sidebar-empty">No saved files yet</p>';
+            console.log('No files found in database');
             return;
         }
 
@@ -697,8 +726,10 @@ async function loadSidebarFiles() {
 
             sidebarContent.appendChild(fileItem);
         });
+
+        console.log('Sidebar populated with', files.length, 'files');
     } catch (error) {
         console.error('Error loading sidebar files:', error);
-        sidebarContent.innerHTML = '<p class="sidebar-empty">Error loading files</p>';
+        sidebarContent.innerHTML = `<p class="sidebar-empty">Error: ${error.message}</p>`;
     }
 }

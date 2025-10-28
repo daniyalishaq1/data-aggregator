@@ -1,4 +1,11 @@
 const { sql } = require('@vercel/postgres');
+const { databaseUrl } = require('./config');
+
+// Set the database URL from config
+if (databaseUrl) {
+  process.env.POSTGRES_URL = databaseUrl;
+  console.log('Database URL configured from config.js');
+}
 
 // Initialize database tables
 async function initializeDatabase() {

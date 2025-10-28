@@ -8,6 +8,24 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
+    <!-- Sidebar -->
+    <div id="sidebar" class="sidebar">
+        <div class="sidebar-header">
+            <h3>Saved Files</h3>
+            <button id="closeSidebar" class="close-sidebar-btn">&times;</button>
+        </div>
+        <div class="sidebar-content" id="sidebarContent">
+            <p class="sidebar-empty">No saved files yet</p>
+        </div>
+    </div>
+
+    <!-- Sidebar Toggle Button -->
+    <button id="toggleSidebar" class="sidebar-toggle-btn">
+        <span>📁</span>
+        <span class="sidebar-count" id="sidebarCount">0</span>
+    </button>
+
+    <!-- Main Content -->
     <div class="container">
         <header>
             <h1>Organization Data Aggregator</h1>

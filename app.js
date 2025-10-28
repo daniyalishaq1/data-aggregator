@@ -28,6 +28,11 @@ const saveBtn = document.getElementById('saveBtn');
 const savedFilesSection = document.getElementById('savedFilesSection');
 const savedFilesList = document.getElementById('savedFilesList');
 const refreshFilesBtn = document.getElementById('refreshFilesBtn');
+const sidebar = document.getElementById('sidebar');
+const toggleSidebarBtn = document.getElementById('toggleSidebar');
+const closeSidebarBtn = document.getElementById('closeSidebar');
+const sidebarContent = document.getElementById('sidebarContent');
+const sidebarCount = document.getElementById('sidebarCount');
 
 // Event Listeners
 fileInput.addEventListener('change', handleFileSelect);
@@ -36,12 +41,17 @@ exportBtn.addEventListener('click', exportToExcel);
 resetBtn.addEventListener('click', resetApp);
 saveBtn.addEventListener('click', saveToDatabase);
 refreshFilesBtn.addEventListener('click', loadSavedFiles);
+toggleSidebarBtn.addEventListener('click', toggleSidebar);
+closeSidebarBtn.addEventListener('click', closeSidebar);
 dismissError.addEventListener('click', () => {
     errorSection.style.display = 'none';
 });
 
 // Load saved files on page load
-window.addEventListener('DOMContentLoaded', loadSavedFiles);
+window.addEventListener('DOMContentLoaded', () => {
+    loadSavedFiles();
+    loadSidebarFiles();
+});
 
 // Drag and drop functionality
 const uploadBox = document.querySelector('.upload-box');
@@ -398,6 +408,9 @@ async function saveToDatabase() {
 
             if (response.ok) {
                 showNotification(`Successfully saved! File ID: ${result.fileId}`);
+                // Refresh sidebar to show new file
+                loadSidebarFiles();
+                loadSavedFiles();
             } else {
                 showError(`Error saving file: ${result.error}`);
             }
@@ -610,6 +623,7 @@ async function deleteSavedFile(fileId) {
         if (response.ok) {
             showNotification('File deleted successfully');
             loadSavedFiles(); // Refresh the list
+            loadSidebarFiles(); // Refresh sidebar
         } else {
             showError('Error deleting file: ' + result.error);
         }
@@ -626,4 +640,65 @@ function formatFileSize(bytes) {
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+}
+
+// Sidebar functions
+function toggleSidebar() {
+    sidebar.classList.toggle('open');
+}
+
+function closeSidebar() {
+    sidebar.classList.remove('open');
+}
+
+// Load files into sidebar
+async function loadSidebarFiles() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/files`);
+        const files = await response.json();
+
+        // Update count badge
+        sidebarCount.textContent = files.length;
+
+        if (files.length === 0) {
+            sidebarContent.innerHTML = '<p class="sidebar-empty">No saved files yet</p>';
+            return;
+        }
+
+        // Clear and populate sidebar
+        sidebarContent.innerHTML = '';
+
+        files.forEach(file => {
+            const fileItem = document.createElement('div');
+            fileItem.className = 'sidebar-file-item';
+            fileItem.onclick = () => {
+                viewSavedFile(file.id);
+                closeSidebar();
+            };
+
+            const formattedDate = new Date(file.created_at).toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+
+            fileItem.innerHTML = `
+                <div class="sidebar-file-name">${file.filename}</div>
+                <div class="sidebar-file-meta">
+                    <span>📅 ${formattedDate}</span>
+                    <span>📊 ${file.total_keywords} keywords</span>
+                </div>
+                <div class="sidebar-file-stats">
+                    <span class="sidebar-stat">${file.total_conversions?.toLocaleString() || 0} conversions</span>
+                    <span class="sidebar-stat">$${(file.total_cost || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                </div>
+            `;
+
+            sidebarContent.appendChild(fileItem);
+        });
+    } catch (error) {
+        console.error('Error loading sidebar files:', error);
+        sidebarContent.innerHTML = '<p class="sidebar-empty">Error loading files</p>';
+    }
 }

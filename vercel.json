@@ -1,8 +1,4 @@
 {
-  "buildCommand": "npm run build",
-  "outputDirectory": ".",
-  "devCommand": "npm run dev",
-  "framework": "static",
   "functions": {
     "api/**/*.js": {
       "runtime": "nodejs18.x"

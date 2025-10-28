@@ -3,10 +3,6 @@
   "version": "1.0.0",
   "description": "Organization Data Aggregator - Consolidate Excel data from multiple properties and generate aggregated reports",
   "main": "index.html",
-  "scripts": {
-    "build": "echo 'Static site - no build needed'",
-    "start": "echo 'Ready to deploy on Vercel'"
-  },
   "keywords": [
     "data-aggregation",
     "excel",
@@ -17,6 +13,5 @@
   "license": "MIT",
   "dependencies": {
     "@vercel/postgres": "^0.4.0"
-  },
-  "devDependencies": {}
+  }
 }

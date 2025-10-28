@@ -4,9 +4,8 @@
   "description": "Organization Data Aggregator - Consolidate Excel data from multiple properties and generate aggregated reports",
   "main": "index.html",
   "scripts": {
-    "dev": "vercel dev",
-    "build": "vercel build",
-    "start": "vercel start"
+    "build": "echo 'Static site - no build needed'",
+    "start": "echo 'Ready to deploy on Vercel'"
   },
   "keywords": [
     "data-aggregation",

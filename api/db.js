@@ -1,7 +1,7 @@
-import { sql } from '@vercel/postgres';
+const { sql } = require('@vercel/postgres');
 
 // Initialize database tables
-export async function initializeDatabase() {
+async function initializeDatabase() {
   try {
     // Create uploaded_files table
     await sql`
@@ -62,7 +62,7 @@ export async function initializeDatabase() {
 }
 
 // Save uploaded file and its data
-export async function saveUploadedFile(filename, fileBuffer, sheetNames, aggregatedData, fileDetails) {
+async function saveUploadedFile(filename, fileBuffer, sheetNames, aggregatedData, fileDetails) {
   try {
     // Insert into uploaded_files
     const fileResult = await sql`
@@ -138,7 +138,7 @@ export async function saveUploadedFile(filename, fileBuffer, sheetNames, aggrega
 }
 
 // Get all uploaded files
-export async function getAllUploadedFiles() {
+async function getAllUploadedFiles() {
   try {
     const result = await sql`
       SELECT id, filename, file_size, sheet_names, total_keywords, total_conversions, total_cost, created_at
@@ -153,7 +153,7 @@ export async function getAllUploadedFiles() {
 }
 
 // Get file by ID
-export async function getFileById(fileId) {
+async function getFileById(fileId) {
   try {
     const fileResult = await sql`
       SELECT id, filename, file_size, sheet_names, total_keywords, total_conversions, total_cost, created_at
@@ -195,7 +195,7 @@ export async function getFileById(fileId) {
 }
 
 // Delete file and associated data
-export async function deleteFile(fileId) {
+async function deleteFile(fileId) {
   try {
     await sql`DELETE FROM uploaded_files WHERE id = ${fileId};`;
     return true;
@@ -206,7 +206,7 @@ export async function deleteFile(fileId) {
 }
 
 // Get file statistics
-export async function getFileStatistics(fileId) {
+async function getFileStatistics(fileId) {
   try {
     const result = await sql`
       SELECT
@@ -226,3 +226,12 @@ export async function getFileStatistics(fileId) {
     throw error;
   }
 }
+
+module.exports = {
+  initializeDatabase,
+  saveUploadedFile,
+  getAllUploadedFiles,
+  getFileById,
+  deleteFile,
+  getFileStatistics
+};

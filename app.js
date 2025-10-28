@@ -685,6 +685,22 @@ async function loadSidebarFiles() {
         const files = await response.json();
         console.log('Loaded files:', files);
 
+        // Check if response is an error object
+        if (files.error || files.success === false) {
+            console.error('API returned error:', files);
+            sidebarCount.textContent = '!';
+            sidebarContent.innerHTML = '<p class="sidebar-empty">Database connection error. Please check Vercel environment variables.</p>';
+            return;
+        }
+
+        // Check if files is actually an array
+        if (!Array.isArray(files)) {
+            console.error('Expected array but got:', typeof files, files);
+            sidebarCount.textContent = '!';
+            sidebarContent.innerHTML = '<p class="sidebar-empty">Invalid response from server</p>';
+            return;
+        }
+
         // Update count badge
         sidebarCount.textContent = files.length;
 

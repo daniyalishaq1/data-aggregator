@@ -211,6 +211,10 @@ function processData() {
                             existing.conversions += conversions;
                             existing.cost += cost;
 
+                            // Track unique properties and campaigns
+                            existing.properties.add(sheetName);
+                            existing.campaigns.add(campaign ? campaign.toString().trim() : 'N/A');
+
                             // Add to breakdown details
                             existing.breakdown.push({
                                 property: sheetName,
@@ -224,6 +228,8 @@ function processData() {
                                 keyword: normalizedKeyword,
                                 conversions: conversions,
                                 cost: cost,
+                                properties: new Set([sheetName]),
+                                campaigns: new Set([campaign ? campaign.toString().trim() : 'N/A']),
                                 breakdown: [{
                                     property: sheetName,
                                     campaign: campaign ? campaign.toString().trim() : 'N/A',
@@ -239,9 +245,12 @@ function processData() {
                 sheetsProcessed++;
             });
 
-            // Convert map to array and sort by conversions (descending)
-            aggregatedData = Array.from(keywordMap.values())
-                .sort((a, b) => b.conversions - a.conversions);
+            // Convert map to array, convert Sets to counts, and sort by conversions (descending)
+            aggregatedData = Array.from(keywordMap.values()).map(item => ({
+                ...item,
+                propertyCount: item.properties.size,
+                campaignCount: item.campaigns.size
+            })).sort((a, b) => b.conversions - a.conversions);
 
             // Display results
             displayResults(aggregatedData, sheetsProcessed);
@@ -366,10 +375,18 @@ function displayResults(data, sheetsProcessed) {
             <span class="keyword-text">${item.keyword}</span>
         `;
 
-        const conversionsCell = row.insertCell(1);
+        const propertiesCell = row.insertCell(1);
+        propertiesCell.textContent = item.propertyCount || 0;
+        propertiesCell.style.textAlign = 'center';
+
+        const campaignsCell = row.insertCell(2);
+        campaignsCell.textContent = item.campaignCount || 0;
+        campaignsCell.style.textAlign = 'center';
+
+        const conversionsCell = row.insertCell(3);
         conversionsCell.textContent = item.conversions.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-        const costCell = row.insertCell(2);
+        const costCell = row.insertCell(4);
         costCell.textContent = '$' + item.cost.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
         // Make row clickable
@@ -383,7 +400,7 @@ function displayResults(data, sheetsProcessed) {
         breakdownRow.style.display = 'none';
 
         const breakdownCell = breakdownRow.insertCell(0);
-        breakdownCell.colSpan = 3;
+        breakdownCell.colSpan = 5;
         breakdownCell.innerHTML = createBreakdownTable(item.breakdown);
     });
 
@@ -513,6 +530,22 @@ function renderFilteredData() {
                 } else {
                     return bVal.localeCompare(aVal);
                 }
+            } else if (currentSortColumn === 'properties') {
+                aVal = a.propertyCount || 0;
+                bVal = b.propertyCount || 0;
+                if (currentSortDirection === 'asc') {
+                    return aVal - bVal;
+                } else {
+                    return bVal - aVal;
+                }
+            } else if (currentSortColumn === 'campaigns') {
+                aVal = a.campaignCount || 0;
+                bVal = b.campaignCount || 0;
+                if (currentSortDirection === 'asc') {
+                    return aVal - bVal;
+                } else {
+                    return bVal - aVal;
+                }
             } else {
                 aVal = a[currentSortColumn];
                 bVal = b[currentSortColumn];
@@ -546,10 +579,18 @@ function renderFilteredData() {
             <span class="keyword-text">${item.keyword}</span>
         `;
 
-        const conversionsCell = row.insertCell(1);
+        const propertiesCell = row.insertCell(1);
+        propertiesCell.textContent = item.propertyCount || 0;
+        propertiesCell.style.textAlign = 'center';
+
+        const campaignsCell = row.insertCell(2);
+        campaignsCell.textContent = item.campaignCount || 0;
+        campaignsCell.style.textAlign = 'center';
+
+        const conversionsCell = row.insertCell(3);
         conversionsCell.textContent = item.conversions.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-        const costCell = row.insertCell(2);
+        const costCell = row.insertCell(4);
         costCell.textContent = '$' + item.cost.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
         // Make row clickable
@@ -563,7 +604,7 @@ function renderFilteredData() {
         breakdownRow.style.display = 'none';
 
         const breakdownCell = breakdownRow.insertCell(0);
-        breakdownCell.colSpan = 3;
+        breakdownCell.colSpan = 5;
         breakdownCell.innerHTML = createBreakdownTable(item.breakdown);
     });
 

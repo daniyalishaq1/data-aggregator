@@ -35,21 +35,28 @@ Keywords are now automatically color-coded into **5 quintiles** based on their *
 
 ### Calculation Method
 
-1. **Calculate CPA** for each keyword:
+**Two-Step Process:**
+
+#### Step 1: Separate Keywords by Conversion Status
+- **With Conversions**: Keywords that have at least 1 conversion
+- **Without Conversions**: Keywords with 0 conversions
+
+#### Step 2: Assign Quintiles
+
+1. **Quintile 5 (Worst)**: ALL keywords with **zero conversions** are automatically assigned here
+   - No CPA calculation needed (no conversions = worst performance)
+
+2. **Quintiles 1-4**: Divide keywords WITH conversions into **4 equal groups** (quartiles) based on CPA:
    ```
    CPA = Total Cost / Total Conversions
    ```
 
-2. **Sort keywords** by CPA in ascending order (lowest to highest)
+   - **Quintile 1** (Best): Bottom 25% - Lowest CPA
+   - **Quintile 2** (Good): Next 25% - Below average CPA
+   - **Quintile 3** (Average): Next 25% - Above average CPA
+   - **Quintile 4** (Below Avg): Top 25% - Highest CPA (among keywords with conversions)
 
-3. **Divide into 5 equal groups** (quintiles):
-   - Top 20% (lowest CPA) = Quintile 1
-   - Next 20% = Quintile 2
-   - Middle 20% = Quintile 3
-   - Next 20% = Quintile 4
-   - Bottom 20% (highest CPA) = Quintile 5
-
-4. **Special case**: Keywords with **zero conversions** are automatically assigned to Quintile 5 (worst)
+**Key Difference**: Quintile 5 is reserved ONLY for zero-conversion keywords, while the remaining keywords are distributed across Quintiles 1-4 based purely on CPA performance.
 
 ### Visual Indicators
 

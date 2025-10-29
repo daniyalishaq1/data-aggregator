@@ -276,32 +276,41 @@ function parseNumber(value) {
 
 // Calculate quintile for Cost Per Acquisition (CPA)
 function calculateQuintiles(data) {
-    // Calculate CPA (Cost Per Acquisition) for each keyword
-    const dataWithCPA = data.map(item => ({
-        ...item,
-        cpa: item.conversions > 0 ? item.cost / item.conversions : Infinity
-    }));
-
-    // Filter out keywords with no conversions and sort by CPA (ascending - lower is better)
-    const validData = dataWithCPA.filter(item => item.conversions > 0);
-    const sortedByCPA = [...validData].sort((a, b) => a.cpa - b.cpa);
-
-    // Calculate quintile thresholds
-    const quintileSize = Math.ceil(sortedByCPA.length / 5);
-
-    // Assign quintiles (1 = best/lowest CPA, 5 = worst/highest CPA)
     const quintileMap = new Map();
-    sortedByCPA.forEach((item, index) => {
-        const quintile = Math.min(Math.floor(index / quintileSize) + 1, 5);
-        quintileMap.set(item.keyword, quintile);
+
+    // Separate keywords with conversions from those without
+    const withConversions = data.filter(item => item.conversions > 0);
+    const withoutConversions = data.filter(item => item.conversions === 0);
+
+    // Step 1: Assign Quintile 5 (Worst) to all keywords with ZERO conversions
+    withoutConversions.forEach(item => {
+        quintileMap.set(item.keyword, 5);
     });
 
-    // Assign quintile 5 (worst) to keywords with no conversions
-    dataWithCPA.forEach(item => {
-        if (item.conversions === 0) {
-            quintileMap.set(item.keyword, 5);
-        }
-    });
+    // Step 2: For keywords with conversions, calculate CPA and divide into 4 quintiles (1-4)
+    if (withConversions.length > 0) {
+        // Calculate CPA for each keyword with conversions
+        const dataWithCPA = withConversions.map(item => ({
+            ...item,
+            cpa: item.cost / item.conversions
+        }));
+
+        // Sort by CPA (ascending - lower CPA is better)
+        const sortedByCPA = dataWithCPA.sort((a, b) => a.cpa - b.cpa);
+
+        // Divide into 4 equal groups (quartiles)
+        const quartileSize = sortedByCPA.length / 4;
+
+        sortedByCPA.forEach((item, index) => {
+            // Assign quintile 1-4 based on CPA quartile
+            // Quintile 1 = Best (lowest 25% CPA)
+            // Quintile 2 = Good (next 25%)
+            // Quintile 3 = Average (next 25%)
+            // Quintile 4 = Below Average (highest 25% CPA among those with conversions)
+            const quintile = Math.min(Math.floor(index / quartileSize) + 1, 4);
+            quintileMap.set(item.keyword, quintile);
+        });
+    }
 
     return quintileMap;
 }

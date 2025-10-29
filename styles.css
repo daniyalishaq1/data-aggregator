@@ -548,6 +548,266 @@ header p {
     font-weight: bold;
 }
 
+/* Quintile Legend */
+.quintile-legend {
+    background: #f8f9ff;
+    border: 2px solid #667eea;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 25px;
+}
+
+.quintile-legend h4 {
+    color: #667eea;
+    margin: 0 0 15px 0;
+    font-size: 1.1em;
+    font-weight: 600;
+    text-align: center;
+}
+
+.legend-items {
+    display: flex;
+    justify-content: space-around;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.legend-color {
+    width: 40px;
+    height: 30px;
+    border-radius: 6px;
+    border: 2px solid #ddd;
+    display: inline-block;
+}
+
+.legend-color.quintile-1 {
+    background: #7FC7AF;
+    border: 2px solid #5BA593;
+}
+
+.legend-color.quintile-2 {
+    background: #C9D9C0;
+    border: 2px solid #A8BFA0;
+}
+
+.legend-color.quintile-3 {
+    background: #FFE5CC;
+    border: 2px solid #E0C0A0;
+}
+
+.legend-color.quintile-4 {
+    background: #FFCCB3;
+    border: 2px solid #E0AA90;
+}
+
+.legend-color.quintile-5 {
+    background: #FF9999;
+    border: 2px solid #E07777;
+}
+
+.legend-label {
+    font-size: 0.9em;
+    color: #555;
+    font-weight: 500;
+}
+
+/* Table Controls - Search and Filter */
+.table-controls {
+    background: white;
+    border: 2px solid #667eea;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.search-container {
+    flex: 1;
+    min-width: 250px;
+    position: relative;
+}
+
+.search-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #667eea;
+    pointer-events: none;
+}
+
+.search-input {
+    width: 100%;
+    padding: 12px 40px 12px 40px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 1em;
+    transition: all 0.3s ease;
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.clear-search {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: #667eea;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+    font-size: 1.2em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.clear-search:hover {
+    background: #764ba2;
+    transform: translateY(-50%) scale(1.1);
+}
+
+.filter-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.filter-label {
+    font-size: 0.95em;
+    color: #667eea;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.filter-select {
+    padding: 10px 16px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 0.95em;
+    background: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-width: 180px;
+}
+
+.filter-select:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.results-info {
+    font-size: 0.95em;
+    color: #667eea;
+    font-weight: 600;
+    white-space: nowrap;
+    padding: 10px 16px;
+    background: #f8f9ff;
+    border-radius: 8px;
+}
+
+.results-info span {
+    color: #764ba2;
+    font-weight: 700;
+}
+
+/* Quintile Statistics Display */
+.quintile-stats {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 12px;
+    padding: 25px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.quintile-stats-header {
+    margin-bottom: 15px;
+}
+
+.quintile-stats-header h4 {
+    color: white;
+    margin: 0;
+    font-size: 1.2em;
+    font-weight: 600;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.quintile-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+}
+
+.quintile-stat-card {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 10px;
+    padding: 20px;
+    text-align: center;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.quintile-stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+.quintile-stat-card.highlight {
+    background: linear-gradient(135deg, #52c41a 0%, #3fa537 100%);
+}
+
+.quintile-stat-card.highlight .stat-label,
+.quintile-stat-card.highlight .stat-value {
+    color: white;
+}
+
+.quintile-stat-card .stat-label {
+    font-size: 0.85em;
+    color: #667eea;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+}
+
+.quintile-stat-card .stat-value {
+    font-size: 1.8em;
+    color: #764ba2;
+    font-weight: 700;
+}
+
 .table-container {
     overflow-x: auto;
     border-radius: 8px;
@@ -572,6 +832,38 @@ th {
     text-transform: uppercase;
     font-size: 0.9em;
     letter-spacing: 0.5px;
+}
+
+th.sortable {
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.2s ease;
+    position: relative;
+}
+
+th.sortable:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+th.sortable .sort-icon {
+    display: inline-block;
+    margin-left: 6px;
+    opacity: 0.5;
+    font-size: 0.9em;
+}
+
+th.sortable.sort-asc .sort-icon::before {
+    content: '▲';
+    opacity: 1;
+}
+
+th.sortable.sort-desc .sort-icon::before {
+    content: '▼';
+    opacity: 1;
+}
+
+th.sortable:not(.sort-asc):not(.sort-desc) .sort-icon {
+    opacity: 0.3;
 }
 
 tbody tr {
@@ -602,12 +894,81 @@ td:nth-child(2), td:nth-child(3) {
     transition: background 0.2s;
 }
 
-.keyword-row:hover {
-    background: #f0f2ff !important;
+/* Quintile color coding based on Cost Per Acquisition (CPA) */
+/* Using pastel gradient: Red → Peach → Cream → Sage → Mint */
+
+/* Quintile 5 - Worst (Highest CPA) - Pastel Red/Coral */
+.keyword-row.quintile-5 {
+    background: #FF9999 !important;
+    color: #8B0000;
+}
+
+.keyword-row.quintile-5:hover {
+    background: #FF8080 !important;
+}
+
+.keyword-row.quintile-5 .expand-icon {
+    color: #8B0000;
+}
+
+/* Quintile 4 - Below Average - Pastel Peach */
+.keyword-row.quintile-4 {
+    background: #FFCCB3 !important;
+    color: #8B4513;
+}
+
+.keyword-row.quintile-4:hover {
+    background: #FFBB99 !important;
+}
+
+.keyword-row.quintile-4 .expand-icon {
+    color: #8B4513;
+}
+
+/* Quintile 3 - Average - Pastel Cream */
+.keyword-row.quintile-3 {
+    background: #FFE5CC !important;
+    color: #8B6914;
+}
+
+.keyword-row.quintile-3:hover {
+    background: #FFDAB3 !important;
+}
+
+.keyword-row.quintile-3 .expand-icon {
+    color: #8B6914;
+}
+
+/* Quintile 2 - Good - Pastel Sage */
+.keyword-row.quintile-2 {
+    background: #C9D9C0 !important;
+    color: #2F4F2F;
+}
+
+.keyword-row.quintile-2:hover {
+    background: #B8CFAA !important;
+}
+
+.keyword-row.quintile-2 .expand-icon {
+    color: #2F4F2F;
+}
+
+/* Quintile 1 - Best (Lowest CPA) - Pastel Mint/Teal */
+.keyword-row.quintile-1 {
+    background: #7FC7AF !important;
+    color: #1B5E4F;
+}
+
+.keyword-row.quintile-1:hover {
+    background: #6BB89E !important;
+}
+
+.keyword-row.quintile-1 .expand-icon {
+    color: #1B5E4F;
 }
 
 .keyword-row.expanded {
-    background: #e8edff;
+    opacity: 0.95;
 }
 
 .expandable-cell {
@@ -753,6 +1114,21 @@ td:nth-child(2), td:nth-child(3) {
     background: linear-gradient(135deg, #f5222d 0%, #cf1322 100%);
 }
 
+@media (max-width: 1024px) and (min-width: 769px) {
+    .quintile-stats-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+    }
+
+    .quintile-stat-card {
+        padding: 18px;
+    }
+
+    .quintile-stat-card .stat-value {
+        font-size: 1.6em;
+    }
+}
+
 @media (max-width: 768px) {
     header h1 {
         font-size: 1.8em;
@@ -776,6 +1152,49 @@ td:nth-child(2), td:nth-child(3) {
         grid-template-columns: 1fr;
     }
 
+    .table-controls {
+        flex-direction: column;
+        align-items: stretch;
+        padding: 15px;
+    }
+
+    .search-container,
+    .filter-container {
+        width: 100%;
+        min-width: unset;
+    }
+
+    .filter-container {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .filter-select {
+        width: 100%;
+    }
+
+    .results-info {
+        text-align: center;
+    }
+
+    .quintile-stats {
+        padding: 20px 15px;
+    }
+
+    .quintile-stats-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    .quintile-stat-card {
+        padding: 15px;
+    }
+
+    .quintile-stat-card .stat-value {
+        font-size: 1.5em;
+    }
+    }
+
     .notification {
         left: 20px;
         right: 20px;
@@ -784,6 +1203,33 @@ td:nth-child(2), td:nth-child(3) {
     .file-card-header {
         flex-direction: column;
         align-items: stretch;
+    }
+
+    .quintile-legend {
+        padding: 15px;
+    }
+
+    .quintile-legend h4 {
+        font-size: 1em;
+    }
+
+    .legend-items {
+        justify-content: center;
+        gap: 8px;
+    }
+
+    .legend-item {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .legend-color {
+        width: 35px;
+        height: 30px;
+    }
+
+    .legend-label {
+        font-size: 0.75em;
     }
 
     .file-info-right {

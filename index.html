@@ -95,13 +95,95 @@
                 </div>
             </div>
 
+            <div class="quintile-legend">
+                <h4>Performance Quintiles (Based on Cost per Conversion)</h4>
+                <div class="legend-items">
+                    <div class="legend-item">
+                        <span class="legend-color quintile-1"></span>
+                        <span class="legend-label">Best (Lowest CPA)</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-color quintile-2"></span>
+                        <span class="legend-label">Good</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-color quintile-3"></span>
+                        <span class="legend-label">Average</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-color quintile-4"></span>
+                        <span class="legend-label">Below Average</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-color quintile-5"></span>
+                        <span class="legend-label">Worst (Highest CPA)</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Search and Filter Controls -->
+            <div class="table-controls">
+                <div class="search-container">
+                    <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <path d="m21 21-4.35-4.35"></path>
+                    </svg>
+                    <input type="text" id="keywordSearch" class="search-input" placeholder="Search keywords...">
+                    <button id="clearSearch" class="clear-search" style="display: none;">&times;</button>
+                </div>
+                <div class="filter-container">
+                    <label for="quintileFilter" class="filter-label">Filter by Performance:</label>
+                    <select id="quintileFilter" class="filter-select">
+                        <option value="all">All Quintiles</option>
+                        <option value="1">Best (Quintile 1)</option>
+                        <option value="2">Good (Quintile 2)</option>
+                        <option value="3">Average (Quintile 3)</option>
+                        <option value="4">Below Avg (Quintile 4)</option>
+                        <option value="5">Worst (Quintile 5)</option>
+                    </select>
+                </div>
+                <div class="results-info">
+                    <span id="resultsCount">0</span> keywords shown
+                </div>
+            </div>
+
+            <!-- Quintile Statistics (shown when filter is active) -->
+            <div id="quintileStats" class="quintile-stats" style="display: none;">
+                <div class="quintile-stats-header">
+                    <h4 id="quintileStatsTitle">Quintile Statistics</h4>
+                </div>
+                <div class="quintile-stats-grid">
+                    <div class="quintile-stat-card">
+                        <div class="stat-label">Total Conversions</div>
+                        <div class="stat-value" id="quintileConversions">0.00</div>
+                    </div>
+                    <div class="quintile-stat-card">
+                        <div class="stat-label">Total Cost</div>
+                        <div class="stat-value" id="quintileCost">$0.00</div>
+                    </div>
+                    <div class="quintile-stat-card highlight">
+                        <div class="stat-label">Cost Per Conversion</div>
+                        <div class="stat-value" id="quintileCPA">$0.00</div>
+                    </div>
+                </div>
+            </div>
+
             <div class="table-container">
                 <table id="resultsTable">
                     <thead>
                         <tr>
-                            <th>Keyword</th>
-                            <th>Conversions</th>
-                            <th>Cost</th>
+                            <th class="sortable" data-column="keyword">
+                                Keyword
+                                <span class="sort-icon">⇅</span>
+                            </th>
+                            <th class="sortable" data-column="conversions">
+                                Conversions
+                                <span class="sort-icon">⇅</span>
+                            </th>
+                            <th class="sortable" data-column="cost">
+                                Cost
+                                <span class="sort-icon">⇅</span>
+                            </th>
                         </tr>
                     </thead>
                     <tbody id="resultsBody">

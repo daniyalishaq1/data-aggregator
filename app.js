@@ -5,6 +5,11 @@ let currentFileBuffer = null;
 let currentFilename = null;
 let currentSheetNames = [];
 let fileDetails = [];
+let quintileMap = new Map();
+let currentSortColumn = null;
+let currentSortDirection = null;
+let currentSearchTerm = '';
+let currentQuintileFilter = 'all';
 
 // Configuration
 const API_BASE_URL = window.location.hostname === 'localhost'
@@ -33,6 +38,10 @@ const toggleSidebarBtn = document.getElementById('toggleSidebar');
 const closeSidebarBtn = document.getElementById('closeSidebar');
 const sidebarContent = document.getElementById('sidebarContent');
 const sidebarCount = document.getElementById('sidebarCount');
+const keywordSearch = document.getElementById('keywordSearch');
+const clearSearchBtn = document.getElementById('clearSearch');
+const quintileFilter = document.getElementById('quintileFilter');
+const resultsCount = document.getElementById('resultsCount');
 
 // Event Listeners
 fileInput.addEventListener('change', handleFileSelect);
@@ -46,6 +55,17 @@ closeSidebarBtn.addEventListener('click', closeSidebar);
 dismissError.addEventListener('click', () => {
     errorSection.style.display = 'none';
 });
+
+// Search and Filter Event Listeners
+if (keywordSearch) {
+    keywordSearch.addEventListener('input', handleSearch);
+}
+if (clearSearchBtn) {
+    clearSearchBtn.addEventListener('click', clearSearch);
+}
+if (quintileFilter) {
+    quintileFilter.addEventListener('change', handleFilter);
+}
 
 // Load saved files on page load
 window.addEventListener('DOMContentLoaded', () => {
@@ -254,6 +274,50 @@ function parseNumber(value) {
     return isNaN(num) ? 0 : num;
 }
 
+// Calculate quintile for Cost Per Acquisition (CPA)
+function calculateQuintiles(data) {
+    // Calculate CPA (Cost Per Acquisition) for each keyword
+    const dataWithCPA = data.map(item => ({
+        ...item,
+        cpa: item.conversions > 0 ? item.cost / item.conversions : Infinity
+    }));
+
+    // Filter out keywords with no conversions and sort by CPA (ascending - lower is better)
+    const validData = dataWithCPA.filter(item => item.conversions > 0);
+    const sortedByCPA = [...validData].sort((a, b) => a.cpa - b.cpa);
+
+    // Calculate quintile thresholds
+    const quintileSize = Math.ceil(sortedByCPA.length / 5);
+
+    // Assign quintiles (1 = best/lowest CPA, 5 = worst/highest CPA)
+    const quintileMap = new Map();
+    sortedByCPA.forEach((item, index) => {
+        const quintile = Math.min(Math.floor(index / quintileSize) + 1, 5);
+        quintileMap.set(item.keyword, quintile);
+    });
+
+    // Assign quintile 5 (worst) to keywords with no conversions
+    dataWithCPA.forEach(item => {
+        if (item.conversions === 0) {
+            quintileMap.set(item.keyword, 5);
+        }
+    });
+
+    return quintileMap;
+}
+
+// Get quintile class for styling
+function getQuintileClass(quintile) {
+    const quintileClasses = {
+        1: 'quintile-1', // Best - Dark Green
+        2: 'quintile-2', // Light Green
+        3: 'quintile-3', // White
+        4: 'quintile-4', // Light Red
+        5: 'quintile-5'  // Worst - Dark Red
+    };
+    return quintileClasses[quintile] || 'quintile-3';
+}
+
 // Display results in table
 function displayResults(data, sheetsProcessed) {
     loadingSection.style.display = 'none';
@@ -265,18 +329,25 @@ function displayResults(data, sheetsProcessed) {
 
     // Update stats
     document.getElementById('totalKeywords').textContent = data.length.toLocaleString();
-    document.getElementById('totalConversions').textContent = totalConversions.toLocaleString();
+    document.getElementById('totalConversions').textContent = totalConversions.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     document.getElementById('totalCost').textContent = '$' + totalCost.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     document.getElementById('sheetsProcessed').textContent = sheetsProcessed;
+
+    // Calculate quintiles based on CPA (Cost Per Acquisition) and store globally
+    quintileMap = calculateQuintiles(data);
 
     // Populate table
     const tbody = document.getElementById('resultsBody');
     tbody.innerHTML = '';
 
     data.forEach((item, index) => {
+        // Get quintile for this keyword
+        const quintile = quintileMap.get(item.keyword);
+        const quintileClass = getQuintileClass(quintile);
+
         // Main row
         const row = tbody.insertRow();
-        row.className = 'keyword-row';
+        row.className = `keyword-row ${quintileClass}`;
         row.dataset.index = index;
 
         const keywordCell = row.insertCell(0);
@@ -287,7 +358,7 @@ function displayResults(data, sheetsProcessed) {
         `;
 
         const conversionsCell = row.insertCell(1);
-        conversionsCell.textContent = item.conversions.toLocaleString();
+        conversionsCell.textContent = item.conversions.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
         const costCell = row.insertCell(2);
         costCell.textContent = '$' + item.cost.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -306,6 +377,247 @@ function displayResults(data, sheetsProcessed) {
         breakdownCell.colSpan = 3;
         breakdownCell.innerHTML = createBreakdownTable(item.breakdown);
     });
+
+    // Update results count
+    updateResultsCount(data.length);
+
+    // Hide quintile stats initially (shows when filter is applied)
+    const quintileStatsDiv = document.getElementById('quintileStats');
+    if (quintileStatsDiv) {
+        quintileStatsDiv.style.display = 'none';
+    }
+
+    // Initialize sorting
+    initializeSorting();
+}
+
+// Initialize table sorting
+function initializeSorting() {
+    const sortableHeaders = document.querySelectorAll('th.sortable');
+    sortableHeaders.forEach(header => {
+        header.addEventListener('click', () => {
+            const column = header.dataset.column;
+            handleSort(column);
+        });
+    });
+}
+
+// Handle sorting
+function handleSort(column) {
+    // Toggle sort direction
+    if (currentSortColumn === column) {
+        if (currentSortDirection === 'asc') {
+            currentSortDirection = 'desc';
+        } else if (currentSortDirection === 'desc') {
+            currentSortColumn = null;
+            currentSortDirection = null;
+        } else {
+            currentSortDirection = 'asc';
+        }
+    } else {
+        currentSortColumn = column;
+        currentSortDirection = 'asc';
+    }
+
+    // Update sort icons
+    updateSortIcons();
+
+    // Re-render table with sorted data
+    renderFilteredData();
+}
+
+// Update sort icons in table headers
+function updateSortIcons() {
+    const sortableHeaders = document.querySelectorAll('th.sortable');
+    sortableHeaders.forEach(header => {
+        header.classList.remove('sort-asc', 'sort-desc');
+        if (header.dataset.column === currentSortColumn) {
+            if (currentSortDirection === 'asc') {
+                header.classList.add('sort-asc');
+            } else if (currentSortDirection === 'desc') {
+                header.classList.add('sort-desc');
+            }
+        }
+    });
+}
+
+// Handle search input
+function handleSearch(event) {
+    currentSearchTerm = event.target.value.toLowerCase().trim();
+
+    // Show/hide clear button
+    if (clearSearchBtn) {
+        clearSearchBtn.style.display = currentSearchTerm ? 'flex' : 'none';
+    }
+
+    renderFilteredData();
+}
+
+// Clear search
+function clearSearch() {
+    if (keywordSearch) {
+        keywordSearch.value = '';
+        currentSearchTerm = '';
+    }
+    if (clearSearchBtn) {
+        clearSearchBtn.style.display = 'none';
+    }
+    renderFilteredData();
+}
+
+// Handle filter change
+function handleFilter(event) {
+    currentQuintileFilter = event.target.value;
+    renderFilteredData();
+}
+
+// Render filtered and sorted data
+function renderFilteredData() {
+    // Start with all data
+    let filteredData = [...aggregatedData];
+
+    // Apply search filter
+    if (currentSearchTerm) {
+        filteredData = filteredData.filter(item =>
+            item.keyword.toLowerCase().includes(currentSearchTerm)
+        );
+    }
+
+    // Apply quintile filter
+    if (currentQuintileFilter !== 'all') {
+        filteredData = filteredData.filter(item => {
+            const quintile = quintileMap.get(item.keyword);
+            return quintile === parseInt(currentQuintileFilter);
+        });
+    }
+
+    // Apply sorting
+    if (currentSortColumn && currentSortDirection) {
+        filteredData.sort((a, b) => {
+            let aVal, bVal;
+
+            if (currentSortColumn === 'keyword') {
+                aVal = a.keyword.toLowerCase();
+                bVal = b.keyword.toLowerCase();
+                if (currentSortDirection === 'asc') {
+                    return aVal.localeCompare(bVal);
+                } else {
+                    return bVal.localeCompare(aVal);
+                }
+            } else {
+                aVal = a[currentSortColumn];
+                bVal = b[currentSortColumn];
+                if (currentSortDirection === 'asc') {
+                    return aVal - bVal;
+                } else {
+                    return bVal - aVal;
+                }
+            }
+        });
+    }
+
+    // Clear table
+    const tbody = document.getElementById('resultsBody');
+    tbody.innerHTML = '';
+
+    // Populate table with filtered data
+    filteredData.forEach((item, index) => {
+        const quintile = quintileMap.get(item.keyword);
+        const quintileClass = getQuintileClass(quintile);
+
+        // Main row
+        const row = tbody.insertRow();
+        row.className = `keyword-row ${quintileClass}`;
+        row.dataset.index = index;
+
+        const keywordCell = row.insertCell(0);
+        keywordCell.className = 'expandable-cell';
+        keywordCell.innerHTML = `
+            <span class="expand-icon">▶</span>
+            <span class="keyword-text">${item.keyword}</span>
+        `;
+
+        const conversionsCell = row.insertCell(1);
+        conversionsCell.textContent = item.conversions.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+        const costCell = row.insertCell(2);
+        costCell.textContent = '$' + item.cost.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+        // Make row clickable
+        row.style.cursor = 'pointer';
+        row.addEventListener('click', () => toggleBreakdown(index, row));
+
+        // Create breakdown row (initially hidden)
+        const breakdownRow = tbody.insertRow();
+        breakdownRow.className = 'breakdown-row';
+        breakdownRow.dataset.index = index;
+        breakdownRow.style.display = 'none';
+
+        const breakdownCell = breakdownRow.insertCell(0);
+        breakdownCell.colSpan = 3;
+        breakdownCell.innerHTML = createBreakdownTable(item.breakdown);
+    });
+
+    // Update results count
+    updateResultsCount(filteredData.length);
+
+    // Update quintile statistics if filter is active
+    updateQuintileStats(filteredData);
+}
+
+// Update quintile statistics display
+function updateQuintileStats(filteredData) {
+    const quintileStatsDiv = document.getElementById('quintileStats');
+    const quintileStatsTitle = document.getElementById('quintileStatsTitle');
+    const quintileConversions = document.getElementById('quintileConversions');
+    const quintileCost = document.getElementById('quintileCost');
+    const quintileCPA = document.getElementById('quintileCPA');
+
+    if (currentQuintileFilter === 'all') {
+        // Hide stats when showing all quintiles
+        if (quintileStatsDiv) {
+            quintileStatsDiv.style.display = 'none';
+        }
+        return;
+    }
+
+    // Calculate totals for the filtered quintile
+    const totalConversions = filteredData.reduce((sum, item) => sum + item.conversions, 0);
+    const totalCost = filteredData.reduce((sum, item) => sum + item.cost, 0);
+    const avgCPA = totalConversions > 0 ? totalCost / totalConversions : 0;
+
+    // Get quintile name
+    const quintileNames = {
+        '1': 'Best Performance (Quintile 1)',
+        '2': 'Good Performance (Quintile 2)',
+        '3': 'Average Performance (Quintile 3)',
+        '4': 'Below Average (Quintile 4)',
+        '5': 'Worst Performance (Quintile 5)'
+    };
+
+    // Update UI
+    if (quintileStatsTitle) {
+        quintileStatsTitle.textContent = quintileNames[currentQuintileFilter] || 'Quintile Statistics';
+    }
+    if (quintileConversions) {
+        quintileConversions.textContent = totalConversions.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+    if (quintileCost) {
+        quintileCost.textContent = '$' + totalCost.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+    if (quintileCPA) {
+        quintileCPA.textContent = '$' + avgCPA.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+    if (quintileStatsDiv) {
+        quintileStatsDiv.style.display = 'block';
+    }
+}
+
+// Update results count display
+function updateResultsCount(count) {
+    if (resultsCount) {
+        resultsCount.textContent = count.toLocaleString();
+    }
 }
 
 // Toggle breakdown visibility
@@ -348,7 +660,7 @@ function createBreakdownTable(breakdown) {
                 <td>${item.property}</td>
                 <td>${item.campaign}</td>
                 <td>${item.adGroup}</td>
-                <td>${item.conversions.toLocaleString()}</td>
+                <td>${item.conversions.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                 <td>$${item.cost.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
             </tr>
         `;
@@ -558,7 +870,7 @@ async function loadSavedFiles() {
                     <div class="file-info-right">
                         <div class="file-stat">
                             <span class="label">Conversions</span>
-                            <span class="value">${file.total_conversions?.toLocaleString() || 0}</span>
+                            <span class="value">${(file.total_conversions || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                         </div>
                         <div class="file-stat">
                             <span class="label">Cost</span>
@@ -735,7 +1047,7 @@ async function loadSidebarFiles() {
                     <span>📊 ${file.total_keywords} keywords</span>
                 </div>
                 <div class="sidebar-file-stats">
-                    <span class="sidebar-stat">${file.total_conversions?.toLocaleString() || 0} conversions</span>
+                    <span class="sidebar-stat">${(file.total_conversions || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} conversions</span>
                     <span class="sidebar-stat">$${(file.total_cost || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                 </div>
             `;

@@ -11,6 +11,23 @@ let currentSortDirection = null;
 let currentSearchTerm = '';
 let currentQuintileFilter = 'all';
 
+// Column filter state
+let columnFilters = {
+    keyword: new Set(),
+    properties: new Set(),
+    campaigns: new Set(),
+    conversions: new Set(),
+    cost: new Set()
+};
+let activeFilters = {
+    keyword: new Set(),
+    properties: new Set(),
+    campaigns: new Set(),
+    conversions: new Set(),
+    cost: new Set()
+};
+let currentOpenFilter = null;
+
 // Configuration
 const API_BASE_URL = window.location.hostname === 'localhost'
   ? 'http://localhost:3000/api'
@@ -71,6 +88,7 @@ if (quintileFilter) {
 window.addEventListener('DOMContentLoaded', () => {
     loadSavedFiles();
     loadSidebarFiles();
+    initializeColumnFilters();
 });
 
 // Drag and drop functionality
@@ -437,7 +455,11 @@ function displayResults(data, sheetsProcessed) {
 function initializeSorting() {
     const sortableHeaders = document.querySelectorAll('th.sortable');
     sortableHeaders.forEach(header => {
-        header.addEventListener('click', () => {
+        header.addEventListener('click', (e) => {
+            // Don't sort if clicking on filter icon or sort icon
+            if (e.target.closest('.filter-icon') || e.target.closest('.filter-dropdown')) {
+                return;
+            }
             const column = header.dataset.column;
             handleSort(column);
         });
@@ -532,6 +554,50 @@ function renderFilteredData() {
             return quintile === parseInt(currentQuintileFilter);
         });
     }
+
+    // Apply column filters
+    filteredData = filteredData.filter(item => {
+        // Filter by keyword
+        if (activeFilters.keyword.size > 0) {
+            if (!activeFilters.keyword.has(item.keyword)) {
+                return false;
+            }
+        }
+
+        // Filter by properties
+        if (activeFilters.properties.size > 0) {
+            const propCount = (item.propertyCount || 0).toString();
+            if (!activeFilters.properties.has(propCount)) {
+                return false;
+            }
+        }
+
+        // Filter by campaigns
+        if (activeFilters.campaigns.size > 0) {
+            const campCount = (item.campaignCount || 0).toString();
+            if (!activeFilters.campaigns.has(campCount)) {
+                return false;
+            }
+        }
+
+        // Filter by conversions
+        if (activeFilters.conversions.size > 0) {
+            const convValue = item.conversions.toFixed(2);
+            if (!activeFilters.conversions.has(convValue)) {
+                return false;
+            }
+        }
+
+        // Filter by cost
+        if (activeFilters.cost.size > 0) {
+            const costValue = item.cost.toFixed(2);
+            if (!activeFilters.cost.has(costValue)) {
+                return false;
+            }
+        }
+
+        return true;
+    });
 
     // Apply sorting
     if (currentSortColumn && currentSortDirection) {
@@ -1126,4 +1192,201 @@ async function loadSidebarFiles() {
         console.error('Error loading sidebar files:', error);
         sidebarContent.innerHTML = `<p class="sidebar-empty">Error: ${error.message}</p>`;
     }
+}
+
+// Column Filter Functions
+function initializeColumnFilters() {
+    // Add click listeners to filter icons
+    document.querySelectorAll('.filter-icon').forEach(icon => {
+        icon.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const column = e.target.dataset.filterColumn;
+            toggleFilterDropdown(column);
+        });
+    });
+
+    // Close filter dropdown when clicking outside
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.filter-dropdown') && !e.target.closest('.filter-icon')) {
+            closeAllFilterDropdowns();
+        }
+    });
+}
+
+function toggleFilterDropdown(column) {
+    const dropdown = document.getElementById(`filter-${column}`);
+    const icon = document.querySelector(`.filter-icon[data-filter-column="${column}"]`);
+
+    // Close other dropdowns
+    if (currentOpenFilter && currentOpenFilter !== column) {
+        closeAllFilterDropdowns();
+    }
+
+    if (dropdown.style.display === 'none' || !dropdown.style.display) {
+        // Open dropdown
+        populateFilterDropdown(column);
+        dropdown.style.display = 'block';
+        icon.classList.add('active');
+        currentOpenFilter = column;
+    } else {
+        // Close dropdown
+        dropdown.style.display = 'none';
+        icon.classList.remove('active');
+        currentOpenFilter = null;
+    }
+}
+
+function closeAllFilterDropdowns() {
+    document.querySelectorAll('.filter-dropdown').forEach(dropdown => {
+        dropdown.style.display = 'none';
+    });
+    document.querySelectorAll('.filter-icon').forEach(icon => {
+        icon.classList.remove('active');
+    });
+    currentOpenFilter = null;
+}
+
+function populateFilterDropdown(column) {
+    const dropdown = document.getElementById(`filter-${column}`);
+    const filterList = dropdown.querySelector('.filter-list');
+    const filterSearch = dropdown.querySelector('.filter-search');
+
+    // Get unique values for this column
+    const uniqueValues = new Set();
+    aggregatedData.forEach(item => {
+        let value;
+        if (column === 'keyword') {
+            value = item.keyword;
+        } else if (column === 'properties') {
+            value = item.propertyCount || 0;
+        } else if (column === 'campaigns') {
+            value = item.campaignCount || 0;
+        } else if (column === 'conversions') {
+            value = item.conversions.toFixed(2);
+        } else if (column === 'cost') {
+            value = item.cost.toFixed(2);
+        }
+        uniqueValues.add(value);
+    });
+
+    // Sort values
+    const sortedValues = Array.from(uniqueValues).sort((a, b) => {
+        if (column === 'keyword') {
+            return a.localeCompare(b);
+        }
+        return parseFloat(a) - parseFloat(b);
+    });
+
+    // Render filter items
+    renderFilterItems(filterList, sortedValues, column);
+
+    // Setup search
+    filterSearch.value = '';
+    filterSearch.oninput = (e) => {
+        const searchTerm = e.target.value.toLowerCase();
+        const filteredValues = sortedValues.filter(v =>
+            v.toString().toLowerCase().includes(searchTerm)
+        );
+        renderFilterItems(filterList, filteredValues, column);
+    };
+
+    // Setup select all / clear
+    const selectAllLink = dropdown.querySelector('.filter-select-all');
+    const clearLink = dropdown.querySelector('.filter-clear');
+
+    selectAllLink.onclick = (e) => {
+        e.preventDefault();
+        filterList.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+            cb.checked = true;
+        });
+    };
+
+    clearLink.onclick = (e) => {
+        e.preventDefault();
+        filterList.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+            cb.checked = false;
+        });
+    };
+
+    // Setup OK / Cancel buttons
+    const okBtn = dropdown.querySelector('.filter-ok');
+    const cancelBtn = dropdown.querySelector('.filter-cancel');
+
+    okBtn.onclick = () => {
+        applyColumnFilter(column, filterList);
+        closeAllFilterDropdowns();
+    };
+
+    cancelBtn.onclick = () => {
+        closeAllFilterDropdowns();
+    };
+}
+
+function renderFilterItems(filterList, values, column) {
+    const displayCount = document.createElement('div');
+    displayCount.className = 'filter-displaying-count';
+    displayCount.textContent = `Displaying ${values.length}`;
+
+    filterList.innerHTML = '';
+    filterList.appendChild(displayCount);
+
+    values.forEach(value => {
+        const item = document.createElement('div');
+        item.className = 'filter-item';
+
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.value = value;
+        checkbox.id = `filter-${column}-${value}`;
+
+        // Check if this value is currently active
+        if (activeFilters[column].size === 0 || activeFilters[column].has(value.toString())) {
+            checkbox.checked = true;
+        }
+
+        const label = document.createElement('label');
+        label.htmlFor = checkbox.id;
+        label.textContent = value;
+
+        item.appendChild(checkbox);
+        item.appendChild(label);
+
+        item.onclick = (e) => {
+            if (e.target !== checkbox) {
+                checkbox.checked = !checkbox.checked;
+            }
+        };
+
+        filterList.appendChild(item);
+    });
+}
+
+function applyColumnFilter(column, filterList) {
+    const checkedValues = new Set();
+    const allCheckboxes = filterList.querySelectorAll('input[type="checkbox"]');
+
+    allCheckboxes.forEach(cb => {
+        if (cb.checked) {
+            checkedValues.add(cb.value);
+        }
+    });
+
+    // If all are checked, clear the filter (show all)
+    const totalValues = allCheckboxes.length;
+    if (checkedValues.size === totalValues) {
+        activeFilters[column].clear();
+    } else {
+        activeFilters[column] = checkedValues;
+    }
+
+    // Update filter icon to show it's active
+    const icon = document.querySelector(`.filter-icon[data-filter-column="${column}"]`);
+    if (activeFilters[column].size > 0) {
+        icon.classList.add('active');
+    } else {
+        icon.classList.remove('active');
+    }
+
+    // Re-render filtered data
+    renderFilteredData();
 }

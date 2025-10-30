@@ -172,25 +172,125 @@
                 <table id="resultsTable">
                     <thead>
                         <tr>
-                            <th class="sortable" data-column="keyword">
-                                Keyword
-                                <span class="sort-icon">⇅</span>
+                            <th class="sortable filterable" data-column="keyword">
+                                <div class="th-content">
+                                    <span class="th-label">Keyword</span>
+                                    <div class="th-icons">
+                                        <span class="sort-icon">⇅</span>
+                                        <span class="filter-icon" data-filter-column="keyword">⋮</span>
+                                    </div>
+                                </div>
+                                <div class="filter-dropdown" id="filter-keyword" style="display: none;">
+                                    <div class="filter-header">
+                                        <input type="text" class="filter-search" placeholder="Search...">
+                                        <div class="filter-actions">
+                                            <a href="#" class="filter-select-all">Select all</a>
+                                            <span>·</span>
+                                            <a href="#" class="filter-clear">Clear</a>
+                                        </div>
+                                    </div>
+                                    <div class="filter-list"></div>
+                                    <div class="filter-footer">
+                                        <button class="filter-cancel">Cancel</button>
+                                        <button class="filter-ok">OK</button>
+                                    </div>
+                                </div>
                             </th>
-                            <th class="sortable" data-column="properties">
-                                No. of Properties
-                                <span class="sort-icon">⇅</span>
+                            <th class="sortable filterable" data-column="properties">
+                                <div class="th-content">
+                                    <span class="th-label">No. of Properties</span>
+                                    <div class="th-icons">
+                                        <span class="sort-icon">⇅</span>
+                                        <span class="filter-icon" data-filter-column="properties">⋮</span>
+                                    </div>
+                                </div>
+                                <div class="filter-dropdown" id="filter-properties" style="display: none;">
+                                    <div class="filter-header">
+                                        <input type="text" class="filter-search" placeholder="Search...">
+                                        <div class="filter-actions">
+                                            <a href="#" class="filter-select-all">Select all</a>
+                                            <span>·</span>
+                                            <a href="#" class="filter-clear">Clear</a>
+                                        </div>
+                                    </div>
+                                    <div class="filter-list"></div>
+                                    <div class="filter-footer">
+                                        <button class="filter-cancel">Cancel</button>
+                                        <button class="filter-ok">OK</button>
+                                    </div>
+                                </div>
                             </th>
-                            <th class="sortable" data-column="campaigns">
-                                No. of Campaigns
-                                <span class="sort-icon">⇅</span>
+                            <th class="sortable filterable" data-column="campaigns">
+                                <div class="th-content">
+                                    <span class="th-label">No. of Campaigns</span>
+                                    <div class="th-icons">
+                                        <span class="sort-icon">⇅</span>
+                                        <span class="filter-icon" data-filter-column="campaigns">⋮</span>
+                                    </div>
+                                </div>
+                                <div class="filter-dropdown" id="filter-campaigns" style="display: none;">
+                                    <div class="filter-header">
+                                        <input type="text" class="filter-search" placeholder="Search...">
+                                        <div class="filter-actions">
+                                            <a href="#" class="filter-select-all">Select all</a>
+                                            <span>·</span>
+                                            <a href="#" class="filter-clear">Clear</a>
+                                        </div>
+                                    </div>
+                                    <div class="filter-list"></div>
+                                    <div class="filter-footer">
+                                        <button class="filter-cancel">Cancel</button>
+                                        <button class="filter-ok">OK</button>
+                                    </div>
+                                </div>
                             </th>
-                            <th class="sortable" data-column="conversions">
-                                Conversions
-                                <span class="sort-icon">⇅</span>
+                            <th class="sortable filterable" data-column="conversions">
+                                <div class="th-content">
+                                    <span class="th-label">Conversions</span>
+                                    <div class="th-icons">
+                                        <span class="sort-icon">⇅</span>
+                                        <span class="filter-icon" data-filter-column="conversions">⋮</span>
+                                    </div>
+                                </div>
+                                <div class="filter-dropdown" id="filter-conversions" style="display: none;">
+                                    <div class="filter-header">
+                                        <input type="text" class="filter-search" placeholder="Search...">
+                                        <div class="filter-actions">
+                                            <a href="#" class="filter-select-all">Select all</a>
+                                            <span>·</span>
+                                            <a href="#" class="filter-clear">Clear</a>
+                                        </div>
+                                    </div>
+                                    <div class="filter-list"></div>
+                                    <div class="filter-footer">
+                                        <button class="filter-cancel">Cancel</button>
+                                        <button class="filter-ok">OK</button>
+                                    </div>
+                                </div>
                             </th>
-                            <th class="sortable" data-column="cost">
-                                Cost
-                                <span class="sort-icon">⇅</span>
+                            <th class="sortable filterable" data-column="cost">
+                                <div class="th-content">
+                                    <span class="th-label">Cost</span>
+                                    <div class="th-icons">
+                                        <span class="sort-icon">⇅</span>
+                                        <span class="filter-icon" data-filter-column="cost">⋮</span>
+                                    </div>
+                                </div>
+                                <div class="filter-dropdown" id="filter-cost" style="display: none;">
+                                    <div class="filter-header">
+                                        <input type="text" class="filter-search" placeholder="Search...">
+                                        <div class="filter-actions">
+                                            <a href="#" class="filter-select-all">Select all</a>
+                                            <span>·</span>
+                                            <a href="#" class="filter-clear">Clear</a>
+                                        </div>
+                                    </div>
+                                    <div class="filter-list"></div>
+                                    <div class="filter-footer">
+                                        <button class="filter-cancel">Cancel</button>
+                                        <button class="filter-ok">OK</button>
+                                    </div>
+                                </div>
                             </th>
                         </tr>
                     </thead>

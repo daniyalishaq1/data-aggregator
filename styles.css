@@ -988,6 +988,7 @@ th:nth-last-child(-n+2) .filter-dropdown {
     cursor: pointer;
     transition: background 0.2s ease;
     font-size: 0.9em;
+    color: #333;
 }
 
 .filter-item:hover {
@@ -1005,6 +1006,7 @@ th:nth-last-child(-n+2) .filter-dropdown {
     cursor: pointer;
     flex: 1;
     user-select: none;
+    color: #333;
 }
 
 .filter-footer {

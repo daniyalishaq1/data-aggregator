@@ -215,14 +215,30 @@ function processData() {
                             existing.properties.add(sheetName);
                             existing.campaigns.add(campaign ? campaign.toString().trim() : 'N/A');
 
-                            // Add to breakdown details
-                            existing.breakdown.push({
-                                property: sheetName,
-                                campaign: campaign ? campaign.toString().trim() : 'N/A',
-                                adGroup: adGroup ? adGroup.toString().trim() : 'N/A',
-                                conversions: conversions,
-                                cost: cost
-                            });
+                            // Check if this property/campaign/adGroup combination already exists in breakdown
+                            const campaignStr = campaign ? campaign.toString().trim() : 'N/A';
+                            const adGroupStr = adGroup ? adGroup.toString().trim() : 'N/A';
+
+                            const existingBreakdown = existing.breakdown.find(b =>
+                                b.property === sheetName &&
+                                b.campaign === campaignStr &&
+                                b.adGroup === adGroupStr
+                            );
+
+                            if (existingBreakdown) {
+                                // Merge with existing breakdown entry
+                                existingBreakdown.conversions += conversions;
+                                existingBreakdown.cost += cost;
+                            } else {
+                                // Add new breakdown entry
+                                existing.breakdown.push({
+                                    property: sheetName,
+                                    campaign: campaignStr,
+                                    adGroup: adGroupStr,
+                                    conversions: conversions,
+                                    cost: cost
+                                });
+                            }
                         } else {
                             keywordMap.set(normalizedKeyword, {
                                 keyword: normalizedKeyword,

@@ -1323,12 +1323,14 @@ function populateFilterDropdown(column) {
 }
 
 function renderFilterItems(filterList, values, column) {
-    const displayCount = document.createElement('div');
-    displayCount.className = 'filter-displaying-count';
-    displayCount.textContent = `Displaying ${values.length}`;
+    // Update the displaying count
+    const dropdown = document.getElementById(`filter-${column}`);
+    const displayingCount = dropdown.querySelector('.filter-displaying-count');
+    if (displayingCount) {
+        displayingCount.textContent = `Displaying ${values.length}`;
+    }
 
     filterList.innerHTML = '';
-    filterList.appendChild(displayCount);
 
     values.forEach(value => {
         const item = document.createElement('div');

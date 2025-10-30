@@ -871,6 +871,10 @@ th.filterable {
     position: relative;
 }
 
+th {
+    position: relative;
+}
+
 th .th-content {
     display: flex;
     justify-content: space-between;
@@ -912,15 +916,22 @@ th .filter-icon.active {
 .filter-dropdown {
     position: absolute;
     top: 100%;
-    left: 0;
+    left: 50%;
+    transform: translateX(-50%);
     background: white;
     border: 1px solid #ddd;
     border-radius: 8px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     z-index: 1000;
-    min-width: 250px;
-    max-width: 350px;
+    width: 280px;
     margin-top: 4px;
+}
+
+/* Adjust position for last two columns to prevent overflow */
+th:nth-last-child(-n+2) .filter-dropdown {
+    left: auto;
+    right: 0;
+    transform: none;
 }
 
 .filter-header {

@@ -88,7 +88,6 @@ if (quintileFilter) {
 window.addEventListener('DOMContentLoaded', () => {
     loadSavedFiles();
     loadSidebarFiles();
-    initializeColumnFilters();
 });
 
 // Drag and drop functionality
@@ -447,8 +446,9 @@ function displayResults(data, sheetsProcessed) {
         quintileStatsDiv.style.display = 'none';
     }
 
-    // Initialize sorting
+    // Initialize sorting and filters
     initializeSorting();
+    initializeColumnFilters();
 }
 
 // Initialize table sorting
@@ -1195,7 +1195,13 @@ async function loadSidebarFiles() {
 }
 
 // Column Filter Functions
+let filtersInitialized = false;
+
 function initializeColumnFilters() {
+    // Only initialize once
+    if (filtersInitialized) return;
+    filtersInitialized = true;
+
     // Add click listeners to filter icons
     document.querySelectorAll('.filter-icon').forEach(icon => {
         icon.addEventListener('click', (e) => {
@@ -1251,6 +1257,9 @@ function populateFilterDropdown(column) {
     const filterList = dropdown.querySelector('.filter-list');
     const filterSearch = dropdown.querySelector('.filter-search');
 
+    console.log('Populating filter for column:', column);
+    console.log('aggregatedData length:', aggregatedData.length);
+
     // Get unique values for this column
     const uniqueValues = new Set();
     aggregatedData.forEach(item => {
@@ -1276,6 +1285,8 @@ function populateFilterDropdown(column) {
         }
         return parseFloat(a) - parseFloat(b);
     });
+
+    console.log('Unique values found:', sortedValues.length);
 
     // Render filter items
     renderFilterItems(filterList, sortedValues, column);
@@ -1323,6 +1334,8 @@ function populateFilterDropdown(column) {
 }
 
 function renderFilterItems(filterList, values, column) {
+    console.log('renderFilterItems called with', values.length, 'values');
+
     // Update the displaying count
     const dropdown = document.getElementById(`filter-${column}`);
     const displayingCount = dropdown.querySelector('.filter-displaying-count');
@@ -1331,8 +1344,10 @@ function renderFilterItems(filterList, values, column) {
     }
 
     filterList.innerHTML = '';
+    console.log('filterList cleared, adding items...');
 
-    values.forEach(value => {
+    values.forEach((value, index) => {
+        console.log(`Adding item ${index}:`, value);
         const item = document.createElement('div');
         item.className = 'filter-item';
 

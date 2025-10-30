@@ -59,6 +59,7 @@ const keywordSearch = document.getElementById('keywordSearch');
 const clearSearchBtn = document.getElementById('clearSearch');
 const quintileFilter = document.getElementById('quintileFilter');
 const resultsCount = document.getElementById('resultsCount');
+const clearAllFiltersBtn = document.getElementById('clearAllFilters');
 
 // Event Listeners
 fileInput.addEventListener('change', handleFileSelect);
@@ -82,6 +83,9 @@ if (clearSearchBtn) {
 }
 if (quintileFilter) {
     quintileFilter.addEventListener('change', handleFilter);
+}
+if (clearAllFiltersBtn) {
+    clearAllFiltersBtn.addEventListener('click', clearAllColumnFilters);
 }
 
 // Load saved files on page load
@@ -1395,6 +1399,42 @@ function applyColumnFilter(column, filterList) {
         icon.classList.remove('active');
     }
 
+    // Update clear all filters button visibility
+    updateClearAllFiltersButton();
+
     // Re-render filtered data
     renderFilteredData();
+}
+
+// Clear all column filters
+function clearAllColumnFilters() {
+    // Clear all active filters
+    Object.keys(activeFilters).forEach(column => {
+        activeFilters[column].clear();
+    });
+
+    // Remove active class from all filter icons
+    document.querySelectorAll('.filter-icon').forEach(icon => {
+        icon.classList.remove('active');
+    });
+
+    // Hide the clear all filters button
+    updateClearAllFiltersButton();
+
+    // Re-render data
+    renderFilteredData();
+}
+
+// Update clear all filters button visibility
+function updateClearAllFiltersButton() {
+    if (!clearAllFiltersBtn) return;
+
+    // Check if any column filter is active
+    const hasActiveFilters = Object.values(activeFilters).some(filter => filter.size > 0);
+
+    if (hasActiveFilters) {
+        clearAllFiltersBtn.style.display = 'inline-flex';
+    } else {
+        clearAllFiltersBtn.style.display = 'none';
+    }
 }
